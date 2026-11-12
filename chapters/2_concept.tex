@@ -1,0 +1,432 @@
+%!TEX root = ../dolgozat.tex
+\chapter{Koncepció}
+\label{ch:koncepcio}
+
+Ebben a fejezetben azt a szakmai hátteret mutatom be, amelyre a dolgozatban elkészített rendszer
+épül. Először a számítógéppel támogatott értékelés általános kérdéseit és a különböző
+feladattípusok automatikus pontozását tekintem át, majd részletesebben foglalkozom a programozási
+feladatok automatikus értékelésével és a nem megbízható programkód biztonságos futtatásával.
+Ezt követően az online vizsgafelügyelet módszereit és az ezekkel kapcsolatos etikai kérdéseket
+vizsgálom, majd összehasonlítom a hasonló célú, már létező rendszereket. A fejezet végén
+bemutatom a felhasznált technológiákat, és megfogalmazom a rendszerrel szemben támasztott
+követelményeket.
+
+\section{Számítógéppel támogatott értékelés}
+\label{sec:caa}
+
+A számítógéppel támogatott értékelés (\textit{computer-assisted assessment}, CAA) Bull és
+McKenna meghatározása szerint minden olyan értékelési forma, amelyben a számítógép szerepet
+játszik a feladatok kiosztásában, a válaszok összegyűjtésében, a pontozásban vagy az
+eredmények elemzésében \cite{bull2004blueprint}. A fogalom tehát tágabb, mint az ,,online teszt'':
+ide tartozik az is, ha a hallgató papíron dolgozik, de a válaszlapokat gép dolgozza fel, és az is,
+ha a hallgató számítógépen ad be egy dolgozatot, amelyet azután az oktató kézzel értékel.
+Dolgozatomban a fogalom szűkebb értelmében, a teljes egészében számítógépen zajló vizsgára
+használom.
+
+Az értékelés céljuk szerint két nagy csoportba sorolható. A \textit{formatív} értékelés a
+tanulási folyamat közben ad visszajelzést a hallgatónak és az oktatónak arról, hol tart a
+hallgató, és min kell még dolgoznia; ilyenek a gyakorló feladatok és az önellenőrző tesztek. A
+\textit{szummatív} értékelés ezzel szemben egy tanulási szakasz végén méri a tudást, és
+jellemzően érdemjegyben vagy pontszámban ölt testet; ilyen a félévközi zárthelyi dolgozat és a
+vizsga \cite{bull2004blueprint}. A két forma eltérő követelményeket támaszt egy informatikai
+rendszerrel szemben. Formatív értékelésnél a gyors és részletes visszajelzés a legfontosabb, a
+csalás elleni védelem kevésbé lényeges, hiszen a hallgatónak magának sem érdeke, hogy
+,,becsapja'' a gyakorló feladatot. Szummatív értékelésnél viszont a megbízhatóság, a
+megismételhetőség és a vizsga tisztaságának biztosítása kerül előtérbe. Az általam készített
+rendszer elsősorban szummatív értékelésre, vagyis vizsgáztatásra készült, de a kódfeladatok
+próbafuttatási lehetősége és a nyilvános példatesztek formatív elemeket is visznek bele.
+
+A számítógéppel támogatott értékelés előnyei közül a szakirodalom leggyakrabban a gyorsaságot, a
+következetességet és a nagy létszámú csoportok kezelhetőségét emeli ki \cite{bull2004blueprint}.
+Egy automatikusan pontozott feladatsor eredménye a beadás pillanatában rendelkezésre áll, és a
+pontozás minden hallgatónál ugyanazon szabályok szerint történik, függetlenül attól, hogy az
+oktató az első vagy a századik dolgozatot javítja. Az eredmények gépi formában állnak elő, így
+könnyen elemezhetők: kiderül, mely feladatok bizonyultak túl könnyűnek vagy túl nehéznek, és
+melyik témakörben teljesített gyengén az évfolyam. A hátrányok között leggyakrabban azt
+említik, hogy az automatikusan értékelhető feladatok -- különösen a feleletválasztós kérdések --
+elsősorban a tényszerű tudást mérik, a magasabb rendű gondolkodási készségek (elemzés,
+értékelés, alkotás) mérésére kevésbé alkalmasak, a jó minőségű feladatok összeállítása pedig
+jelentős előkészítő munkát igényel \cite{bull2004blueprint}. Saját véleményem szerint ez a
+probléma az informatikai képzésben részben feloldható: egy programozási feladat megoldása maga
+is alkotó tevékenység, amely ráadásul jól automatizálható módon ellenőrizhető.
+
+\section{Feladattípusok és automatikus pontozásuk}
+\label{sec:feladattipusok}
+
+A vizsgafeladatok a válasz kötöttsége szerint zárt, félig nyílt és nyílt feladatokra oszthatók. A
+zárt feladatoknál a hallgató előre megadott lehetőségek közül választ; ide tartoznak az
+egyválasztós, a több választós és az igaz--hamis kérdések. Ezek pontozása egyértelmű és teljes
+mértékben automatizálható, hiszen csak azt kell megvizsgálni, hogy a megjelölt válaszok
+egyeznek-e a megoldókulccsal. A félig nyílt feladatoknál a hallgató maga írja be a választ, de
+annak formája kötött: egy szám, egy kifejezés vagy egy rövid szöveg. Ezek automatikus értékelése
+már nem triviális, hiszen ugyanaz a helyes válasz többféleképpen is leírható (kis- vagy
+nagybetűvel, szóközökkel, tizedesvesszővel vagy -ponttal), ezért az összehasonlítás előtt a
+válaszokat egységes formára kell hozni, és célszerű több elfogadott választ is megengedni. A
+nyílt feladatok, például a kifejtős kérdések, a mai eszközökkel megbízhatóan nem értékelhetők
+automatikusan, ezeknél a számítógép szerepe a válaszok összegyűjtésére és a kézi javítás
+támogatására korlátozódik.
+
+Külön figyelmet érdemel a több helyes választ tartalmazó feladatok pontozása. Ha a rendszer csak a
+tökéletes választ fogadja el, akkor egyetlen elnézett jelölés is nulla pontot eredményez, ami a
+hallgató tudását nem tükrözi hűen. Ha viszont minden helyes jelölésért részpont jár, és a hibás
+jelölésekért nem jár levonás, akkor a hallgató egyszerűen az összes lehetőséget megjelölheti, és
+így biztosan megkapja a teljes pontszámot. A gyakorlatban ezért elterjedt megoldás, hogy a helyes
+jelölések részpontot érnek, a hibás jelölések pedig ugyanilyen mértékben csökkentik a pontszámot,
+de a feladatra adott pontszám nem lehet negatív. A rendszeremben ezt a pontozási módot
+valósítottam meg (lásd \aref{sec:pontozas}. szakaszt), mert véleményem szerint ez egyensúlyt teremt
+a részleges tudás elismerése és a találgatás visszaszorítása között.
+
+\section{Programozási feladatok automatikus értékelése}
+\label{sec:apas}
+
+A programozási feladatok automatikus értékelése egyidős a programozásoktatással. Már 1960-ban
+megjelent egy cikk, amely egy olyan programról számolt be, amely a hallgatók által lyukkártyán
+beadott programokat futtatta le és értékelte \cite{hollingsworth1960automatic}. Douce és szerzőtársai
+áttekintő tanulmányukban a terület fejlődését három generációra osztották
+\cite{douce2005automatic}. Az első generáció rendszerei egy-egy konkrét környezethez kötött,
+egyedi megoldások voltak. A második generáció általánosabb, parancssori és grafikus
+eszközöket hozott, amelyek már több feladattípust és programozási nyelvet támogattak. A harmadik
+generációt a webes rendszerek jelentik, amelyekben a hallgató böngészőből adja be a megoldását, és
+az eredményt is ott kapja meg.
+
+Ihantola és szerzőtársai a 2006 és 2010 között megjelent rendszereket vizsgálva arra a
+következtetésre jutottak, hogy bár sok rendszer készült, ezek jelentős része egy-egy intézmény
+belső eszköze maradt, és a rendszerek közötti legfontosabb különbségek a támogatott programozási
+nyelvekben, a tesztek megadásának módjában, az újrabeküldés szabályaiban, a kézi értékelés
+lehetőségében és a futtatás biztonságában mutatkoznak meg \cite{ihantola2010review}. Különösen az
+utolsó szempontot emelték ki: egy automatikus értékelő rendszernek úgy kell futtatnia a
+hallgatók programjait, hogy azok ne veszélyeztethessék sem a szervert, sem más hallgatók
+megoldásait. Paiva és szerzőtársai egy jóval újabb, 2022-es áttekintésükben megállapították, hogy
+az automatikus értékelés mára a számítástechnika-oktatás széles körben használt eszközévé vált,
+és a kutatások súlypontja egyre inkább a hallgatónak adott visszajelzés minőségére helyeződik át
+\cite{paiva2022automated}.
+
+Az értékelés módszerei alapvetően két csoportba sorolhatók \cite{paiva2022automated}. A
+\textit{dinamikus} elemzés a programot ténylegesen lefuttatja, és a viselkedését vizsgálja;
+ennek legelterjedtebb formája a tesztelésen alapuló értékelés, amelyben a program előre megadott
+bemenetekre adott kimenetét hasonlítjuk össze az elvárt kimenettel. A \textit{statikus} elemzés
+a programot futtatás nélkül, a forráskód alapján vizsgálja, például a kódolási stílus, a
+bonyolultság vagy bizonyos tiltott nyelvi elemek használata szempontjából. Rendszeremben a
+dinamikus, tesztelésen alapuló értékelést valósítottam meg, mert ez közvetlenül azt méri, amit a
+vizsgafeladat számon kér: hogy a program helyesen oldja-e meg a feladatot.
+
+A tesztelésen alapuló értékelés egyik fontos tervezési kérdése, hogy a hallgató mennyit lásson a
+tesztesetekből. Ha minden tesztesetet ismer, akkor fennáll a veszély, hogy a programját a konkrét
+tesztekre ,,szabja'', például az elvárt kimeneteket egyszerűen kiírja, ahelyett hogy általános
+megoldást készítene. Ha viszont egyet sem ismer, akkor nem tudja ellenőrizni, hogy jól értette-e
+a feladatot, és például a kimenet formátumán (egy fölösleges szóközön vagy sortörésen) is
+elbukhat. A gyakorlatban elterjedt kompromisszum a tesztesetek két csoportra bontása: a
+nyilvános példatesztek a feladat megértését segítik, a rejtett tesztek pedig a megoldás
+általánosságát ellenőrzik. Ezt a megoldást alkalmaztam a rendszeremben is.
+
+\section{Nem megbízható programkód biztonságos futtatása}
+\label{sec:sandbox_elmelet}
+
+Az automatikus értékelő rendszer a hallgatók programjait futtatja, vagyis olyan kódot, amelynek
+tartalmáról a futtatás előtt semmit sem tudunk. Egy ilyen programot -- a hibás és a szándékosan
+ártó programokat egyaránt -- \textit{nem megbízható kódnak} nevezünk. A lehetséges fenyegetések
+közé tartozik az erőforrások kimerítése (végtelen ciklus, korlátlan memóriafoglalás, rengeteg
+folyamat indítása, óriási mennyiségű kimenet előállítása), a szerver fájljainak olvasása vagy
+módosítása (például más hallgatók megoldásainak vagy a tesztesetek elvárt kimeneteinek
+megszerzése), hálózati kapcsolatok kezdeményezése, valamint az értékelés eredményének
+meghamisítása. A futtatókörnyezetet ezért úgy kell kialakítani, hogy a program csak a
+számára kijelölt, szigorúan korlátozott erőforrásokhoz férhessen hozzá. Az ilyen elszigetelt
+futtatókörnyezetet nevezzük homokozónak (\textit{sandbox}).
+
+Az elszigetelésre több megoldás is létezik. A legegyszerűbb az operációs rendszer
+folyamatszintű korlátozásainak használata (időkorlát, memóriakorlát, jogosultságok nélküli
+felhasználó), ez azonban önmagában nem akadályozza meg, hogy a program lássa a szerver
+fájlrendszerét és hálózatát. A másik véglet a teljes virtuális gép, amely erős elszigetelést nyújt,
+de az indítása lassú és sok erőforrást igényel, ami egy vizsga során egyszerre beküldött több
+száz megoldás esetén komoly korlátot jelent. A kettő között helyezkednek el a konténerek.
+
+A Docker konténerek a Linux kernel két szolgáltatására épülnek \cite{merkel2014docker}. A
+\textit{névterek} (\textit{namespaces}) segítségével a konténerben futó folyamat saját, elkülönített
+nézetet kap a rendszerről: saját folyamatlistát, fájlrendszert, hálózati csatolókat és
+felhasználókat lát, így a gazdagép többi folyamatához és fájljához nem fér hozzá. A
+\textit{vezérlőcsoportok} (\textit{control groups}, cgroups) pedig lehetővé teszik a konténer által
+felhasználható erőforrások -- memória, processzoridő, folyamatok száma -- korlátozását
+\cite{docker_docs}. A konténer nem tartalmaz saját operációsrendszer-kernelt, hanem a gazdagépét
+használja, ezért a virtuális gépeknél lényegesen gyorsabban, jellemzően egy másodpercen belül
+elindul \cite{merkel2014docker}. Ennek az ára, hogy az elszigetelés gyengébb: egy kernelszintű
+biztonsági rés esetén a konténerből elvileg ki lehet törni. Ezért a konténer jogosultságait is a
+lehető legszűkebbre kell szabni: le kell tiltani a hálózatot, csak olvashatóvá kell tenni a
+fájlrendszert, el kell dobni a Linux különleges jogosultságait (\textit{capabilities}), és a
+programot nem rendszergazdaként kell futtatni. Az általam alkalmazott beállításokat \aref{tab:sandbox}.
+táblázat foglalja össze.
+
+\section{Online vizsgafelügyelet és akadémiai integritás}
+\label{sec:proctoring}
+
+Az online vizsgák egyik legtöbbet vitatott kérdése a vizsgázók felügyelete
+(\textit{proctoring}). A felügyeleti megoldások három fő típusa különböztethető meg
+\cite{nigam2021systematic}. Az \textit{élő felügyelet} során egy emberi felügyelő webkamerán
+keresztül valós időben figyeli a vizsgázókat. A \textit{rögzített felügyelet} esetén a vizsga
+alatt kép- és hangfelvétel készül, amelyet később egy felügyelő átnéz. Az \textit{automatizált
+felügyelet} pedig mesterséges intelligenciára épülő módszerekkel elemzi a vizsgázó viselkedését,
+és csak a gyanús eseteket jelzi emberi ellenőrzésre. Nigam és szerzőtársai rendszerező
+áttekintésükben azt találták, hogy a COVID-19 járvány hatására az automatizált felügyeleti
+rendszerek iránti kereslet jelentősen megnőtt, ugyanakkor ezek a rendszerek komoly kihívásokkal
+küzdenek, többek között az adatvédelem, a téves riasztások és a technikai feltételek terén
+\cite{nigam2021systematic}.
+
+Az automatizált felügyelet egyik sokat hivatkozott példája Atoum és szerzőtársai rendszere,
+amely két kamera (egy webkamera és egy viselhető kamera) és egy mikrofon jeleit dolgozza fel
+\cite{atoum2017automated}. A rendszer több alapvető viselkedési jellemzőt figyel, például a
+vizsgázó személyazonosságát, a tekintet irányát, a beszédet, a mobiltelefon jelenlétét és a
+számítógépen aktív ablakot, majd ezek alapján osztályozza, hogy történt-e csalás. Érdemes
+kiemelni, hogy az aktív ablak figyelése, vagyis annak észlelése, hogy a vizsgázó másik
+alkalmazásra vált, ebben a komplex rendszerben is külön jellemzőként szerepel.
+
+A felügyeleti rendszerek használata azonban komoly etikai kérdéseket vet fel. Coghlan, Miller és
+Paterson részletesen elemezték az online egyetemi vizsgák felügyeletének etikai vonatkozásait
+\cite{coghlan2021proctor}. Megállapításaik szerint a webkamerás és mesterséges intelligenciára épülő
+felügyelet a hallgatók magánszféráját érinti (hiszen a felügyelet a hallgató otthonába ,,lát
+be''), a téves riasztások igazságtalan gyanúba keverhetik a vizsgázókat, a rendszerek működése
+pedig sokszor nem átlátható. Ugyanakkor nem vetik el teljesen a felügyelet alkalmazását: úgy
+érvelnek, hogy bizonyos esetekben indokolt lehet, ha az intézmény átláthatóan tájékoztatja a
+hallgatókat, a beavatkozás mértéke arányos a céllal, és az automatikus jelzések alapján
+emberi döntés születik \cite{coghlan2021proctor}.
+
+Ezek alapján a saját rendszeremben egy szándékosan szerény, a magánszférát nem sértő megoldást
+választottam: a rendszer kizárólag azt figyeli, hogy a vizsgázó böngészőablaka elveszíti-e a
+fókuszt, illetve elrejti-e a vizsgaoldalt, és ezt valós időben jelzi az oktatónak. Kamera- és
+hangfelvétel nem készül, a rendszer nem hoz automatikus döntést, csupán információt ad az
+oktatónak, aki a jelzéseket a vizsga körülményeinek ismeretében értékelheti. Tisztában vagyok vele,
+hogy ez a módszer nem nyújt teljes védelmet, hiszen egy második eszköz használatát nem képes
+észlelni; véleményem szerint azonban egy egyetemi vizsgán a visszatartó hatás és az oktató
+tájékoztatása a magánszféra tiszteletben tartásával együtt jobb egyensúlyt jelent, mint a
+hallgatók folyamatos megfigyelése.
+
+\section{Hasonló alkalmazások}
+\label{sec:hasonlo}
+
+A rendszer megtervezése előtt megvizsgáltam néhány elterjedt, hasonló célú alkalmazást. Ezek közül
+hármat mutatok be részletesebben, mert jól reprezentálják a lehetséges megközelítéseket.
+
+A \textbf{Moodle} nyílt forráskódú tanulásirányítási rendszer (LMS) a felsőoktatásban az egyik
+legelterjedtebb e-learning platform, amelyet hazánkban is számos egyetem használ. Teszt (\textit{Quiz})
+modulja sokféle kérdéstípust támogat, többek között feleletválasztós, igaz--hamis, rövid
+válaszos, numerikus és esszé típusú kérdéseket, valamint részletes beállításokat kínál az
+időkorlátra, a próbálkozások számára és a visszajelzésre \cite{moodle_quiz_docs}. A tesztmodul
+önmagában nem futtat programkódot, és valós idejű felügyeletet sem nyújt; a vizsgakörnyezet
+korlátozására a Safe Exam Browser nevű külön telepítendő, zárolt böngészővel integrálható
+\cite{seb_site}.
+
+A \textbf{CodeRunner} a Moodle egy bővítménye, amely új kérdéstípusként programozási feladatokat
+ad a tesztmodulhoz \cite{coderunner_site}. A hallgató által beküldött kódot egy különálló,
+homokozóként működő szerveren futtatja le tesztesetekkel, és támogatja a hallgató elől elrejtett
+teszteseteket is. Mivel a Moodle tesztmodulján belül működik, a többi kérdéstípussal együtt
+használható, így vegyes vizsgák is összeállíthatók vele. Hátránya, hogy használatához egy teljes
+Moodle-rendszer és egy külön kódfuttató szerver üzemeltetése szükséges, ami egy kisebb oktatói
+csoport számára jelentős üzemeltetési terhet jelent.
+
+A \textbf{DOMjudge} programozási versenyek (például az ICPC) lebonyolítására készült nyílt
+forráskódú rendszer \cite{domjudge_site}. A beküldött programokat elszigetelt környezetben futtatja,
+és rejtett tesztadatok alapján dönti el, hogy a megoldás helyes-e. A versenyekhez igazodva
+azonban csak programozási feladatokat kezel, az értékelés jellemzően ,,elfogadva vagy elutasítva''
+jellegű, részpontozásra és kifejtős feladatokra nincs lehetőség, így egy egyetemi vizsga teljes
+lebonyolítására kevésbé alkalmas.
+
+\begin{table}[H]
+  \centering
+  \caption{A vizsgált rendszerek összehasonlítása}
+  \label{tab:osszehasonlitas}
+  \small
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X>{\centering\arraybackslash}p{2.5cm}>{\centering\arraybackslash}p{2.6cm}>{\centering\arraybackslash}p{2.0cm}>{\centering\arraybackslash}p{2.0cm}@{}}
+    \toprule
+    Szempont & Moodle Quiz & Moodle + CodeRunner & DOMjudge & Saját rendszer \\
+    \midrule
+    Vegyes feladattípusok        & igen & igen & nem & igen \\
+    Programkód futtatása         & nem & igen & igen & igen \\
+    Rejtett tesztesetek          & -- & igen & igen & igen \\
+    Részpontozás kódfeladatnál   & -- & igen & nem & igen \\
+    Kézi javítás, visszajelzés   & igen & igen & részben & igen \\
+    Ablakelhagyás valós idejű jelzése & nem (zárolt böngészővel korlátozható) & nem & nem & igen \\
+    Üzemeltetési igény           & nagy & nagy & közepes & kicsi \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+A rendszerek főbb jellemzőit \aref{tab:osszehasonlitas}. táblázat foglalja össze. Az összevetés
+alapján úgy látom, hogy a kódfuttatást és a vegyes feladattípusokat a Moodle és a CodeRunner
+együttese kínálja a legteljesebb formában, ennek azonban jelentős üzemeltetési ára van, a valós
+idejű felügyelet pedig ott sem megoldott. Az általam készített rendszer nem kíván versenyezni egy
+teljes tanulásirányítási rendszerrel, hanem azt mutatja meg, hogy a vizsgáztatás e három
+összetevője -- a vegyes feladattípusok, a biztonságos kódfuttatás és a valós idejű felügyelet --
+egy könnyen telepíthető, átlátható felépítésű alkalmazásban is egyesíthető.
+
+\section{Felhasznált technológiák}
+\label{sec:technologiak}
+
+A technológiák kiválasztásánál fontos szempont volt, hogy elterjedt, jól dokumentált, nyílt
+forráskódú eszközöket használjak, amelyek a webes alkalmazásfejlesztés jelenlegi gyakorlatát
+képviselik, és amelyekkel egy kisebb csapat is hatékonyan tud dolgozni.
+
+\subsection{REST architektúra}
+
+A kliens és a szerver közötti kommunikáció a REST (\textit{Representational State Transfer})
+architekturális stílust követi, amelyet Roy Fielding fogalmazott meg doktori értekezésében
+\cite{fielding2000architectural}. A REST egy sor megszorítást határoz meg: a kliens és a szerver
+elkülönülését, az állapotmentes kommunikációt (minden kérés tartalmazza a feldolgozásához
+szükséges összes információt), a gyorsítótárazhatóságot, az egységes interfészt, valamint a
+rétegzett felépítést \cite{fielding2000architectural}. A gyakorlatban ez azt jelenti, hogy a
+rendszer erőforrásai (vizsgák, feladatok, kitöltések, válaszok) URL-ekkel azonosíthatók, a rajtuk
+végzett műveleteket pedig a HTTP metódusai (GET, POST, PUT, PATCH, DELETE) fejezik ki. Az
+állapotmentesség különösen előnyös a hitelesítés szempontjából, mert lehetővé teszi a
+token alapú azonosítást, ahol a szervernek nem kell munkamenetet tárolnia.
+
+\subsection{Szerveroldal: Python, FastAPI, SQLAlchemy, PostgreSQL}
+
+A szerveroldalt Python nyelven, a FastAPI keretrendszerrel készítettem el \cite{fastapi_docs}. A
+FastAPI az ASGI (\textit{Asynchronous Server Gateway Interface}) szabványra épül, így szinkron és
+aszinkron kéréskezelőket egyaránt támogat, ami a valós idejű kommunikációhoz használt Socket.IO
+szerver beépítését is megkönnyítette. A keretrendszer a Python típusannotációit használja fel a
+kérések paramétereinek feldolgozására, a Pydantic könyvtár segítségével pedig a be- és kimenő
+adatok automatikus ellenőrzésére és átalakítására \cite{pydantic_docs}. Ennek nagy előnye, hogy a
+validációs szabályokat egyszer, deklaratív módon kell megfogalmazni, és a keretrendszer ezekből
+automatikusan interaktív API-dokumentációt (OpenAPI/Swagger) is előállít, ami a fejlesztés és a
+tesztelés során sokat segített. Alternatívaként a Django és a Flask keretrendszer jöhetett
+volna szóba; a Django egy teljes, ,,mindent tartalmazó'' keretrendszer, amely egy REST API-hoz
+fölöslegesen nehézkes, a Flaskhoz pedig a validációt és a dokumentációt külön könyvtárakkal
+kellett volna megoldani.
+
+Az adatokat PostgreSQL relációs adatbázisban tárolom \cite{postgresql_docs}, amely nyílt forráskódú,
+megbízható, és a tranzakciókezelés, az egyedi megszorítások és a JSON típusú oszlopok
+támogatása miatt jól illeszkedik a feladathoz. Az adatbázist az SQLAlchemy objektum-relációs
+leképező (ORM) könyvtáron keresztül érem el \cite{sqlalchemy_docs}, amely a táblákat Python
+osztályokként, a rekordokat objektumokként kezeli. Ennek köszönhetően a kód nagy része
+adatbázis-függetlenné vált: fejlesztés és tesztelés közben ugyanaz a kód SQLite adatbázissal is
+működik.
+
+\subsection{Hitelesítés: JWT és bcrypt}
+
+A felhasználók azonosítására JSON Web Tokent (JWT) használok. A JWT egy tömör, URL-biztos
+formátum, amely egy fejlécből, egy adatrészből (\textit{payload}) és egy digitális aláírásból áll,
+ezeket pont választja el egymástól \cite{rfc7519}. Az adatrész úgynevezett állításokat
+(\textit{claims}) tartalmaz, például a felhasználó azonosítóját (\texttt{sub}) és a token lejárati
+idejét (\texttt{exp}). Mivel a tokent a szerver írja alá, annak tartalma a kliens által nem
+módosítható észrevétlenül, így a szerver minden kérésnél adatbázis-alapú munkamenet nélkül
+ellenőrizheti a felhasználó személyazonosságát.
+
+A jelszavak tárolására a bcrypt algoritmust választottam, amelyet Provos és Mazières kifejezetten
+jelszavak hash-elésére terveztek \cite{provos1999bcrypt}. A bcrypt minden jelszóhoz véletlen sót
+(\textit{salt}) használ, így két azonos jelszó hash-e is különböző, és egy állítható
+költségparaméterrel szabályozható, hogy egy hash kiszámítása mennyi időt vegyen igénybe. A
+szerzők célja az volt, hogy az algoritmus ,,együtt tudjon nőni'' a hardverek teljesítményével:
+a költségparaméter emelésével a nyers erővel történő jelszótörés a jövőben is költséges
+maradhat \cite{provos1999bcrypt}.
+
+\subsection{Valós idejű kommunikáció: WebSocket és Socket.IO}
+
+A HTTP protokoll kérés--válasz alapú: a kommunikációt mindig a kliens kezdeményezi. A valós idejű
+felügyelethez azonban arra van szükség, hogy a szerver saját kezdeményezésből is üzenhessen az
+oktató kliensének, amikor egy hallgató elhagyja a vizsgaablakot. Erre szolgál a WebSocket
+protokoll, amely egy HTTP-kérésként induló kézfogás (\textit{handshake}) után egy állandó,
+kétirányú (\textit{full-duplex}) kapcsolatot épít ki a kliens és a szerver között \cite{rfc6455}.
+
+A WebSocketet nem közvetlenül, hanem a Socket.IO könyvtáron keresztül használom
+\cite{socketio_docs}. A Socket.IO a WebSocket fölé egy eseményalapú programozási felületet
+helyez, automatikusan újracsatlakozik a kapcsolat megszakadása esetén, és ha a WebSocket nem
+érhető el (például egy proxy kiszűri), HTTP-alapú hosszú lekérdezésre (\textit{long polling})
+vált. Különösen hasznos a szobák (\textit{rooms}) fogalma, amellyel az üzenetek egy kijelölt
+klienscsoportnak, esetemben egy adott vizsga résztvevőinek küldhetők el.
+
+\subsection{Kliensoldal: React, Next.js, Tailwind CSS}
+
+A felhasználói felületet a React könyvtárra épülő Next.js keretrendszerrel készítettem
+\cite{react_docs,nextjs_docs}. A React komponensalapú megközelítése lehetővé teszi, hogy a felület
+újrahasznosítható építőelemekből álljon össze; a vizsgaoldalon például ugyanaz a válaszbeviteli
+komponens jeleníti meg mind a hat feladattípust. A React \textit{hook} mechanizmusa lehetővé teszi,
+hogy egy összetett, állapottal rendelkező logikát -- mint a felügyeleti kapcsolat kezelését --
+egy önálló, újrahasznosítható függvénybe szervezzek ki. A Next.js ehhez fájlrendszer-alapú
+útvonalkezelést (az App Routert) és egyszerű fejlesztői környezetet ad. A TypeScript nyelv
+használata a szerver által küldött adatok típusainak leírásával sok hibát már fordítási időben
+kiszűrt. A megjelenéshez a Tailwind CSS segédosztály-alapú keretrendszert használtam
+\cite{tailwind_docs}, amellyel a stílusok közvetlenül a komponensekben adhatók meg, így nem kellett
+külön stíluslapokat karbantartani.
+
+\subsection{Konténerizáció: Docker}
+
+A Docker \cite{merkel2014docker,docker_docs} a rendszerben kettős szerepet tölt be. Egyrészt a
+fejlesztési környezet része: a PostgreSQL adatbázis egy Docker Compose leírással egyetlen
+paranccsal elindítható, így a rendszer telepítése nem igényli az adatbázis-kezelő külön
+telepítését. Másrészt -- és ez a fontosabb szerep -- ez biztosítja a hallgatók programjainak
+elszigetelt futtatását, amelynek elméleti hátterét \aref{sec:sandbox_elmelet}. szakaszban
+ismertettem. A szerveroldali alkalmazás a Docker Python nyelvű programozói felületén
+(SDK-ján) keresztül indítja és állítja le a konténereket.
+
+\section{Követelményspecifikáció}
+\label{sec:kovetelmenyek}
+
+A követelmények megfogalmazásánál a szoftvertechnológia szokásos felosztását követtem, amely
+megkülönbözteti a rendszer által nyújtandó szolgáltatásokat leíró funkcionális, valamint a
+rendszer működésének minőségi jellemzőit és korlátait leíró nem funkcionális követelményeket
+\cite{sommerville2016software}.
+
+\subsection{Szerepkörök és funkcionális követelmények}
+
+A rendszernek két szerepköre van. A \textbf{hallgató} vizsgákat tölt ki, az \textbf{oktató} pedig
+vizsgákat hoz létre, felügyeli és értékeli azokat. A regisztráció alapértelmezés szerint hallgatói
+fiókot hoz létre; oktatói fiók csak egy meghívókód ismeretében regisztrálható. A szerepkörökhöz
+tartozó főbb funkcionális követelményeket \aref{tab:funkcionalis}. táblázat foglalja össze.
+
+\begin{longtable}{@{}lp{1.9cm}p{10.9cm}@{}}
+  \caption{Funkcionális követelmények}\label{tab:funkcionalis}\\
+  \toprule
+  Azon. & Szerepkör & Követelmény \\
+  \midrule
+  \endfirsthead
+  \toprule
+  Azon. & Szerepkör & Követelmény \\
+  \midrule
+  \endhead
+  F1  & mindkettő & Regisztráció e-mail címmel és jelszóval, bejelentkezés, kijelentkezés. \\
+  F2  & oktató    & Vizsga létrehozása címmel, leírással, időablakkal (kezdés és vége) és kitöltési időtartammal; vizsga törlése. \\
+  F3  & oktató    & Feladatok hozzáadása és törlése hat típusban: egyválasztós, több választós, igaz--hamis, rövid szöveges, kifejtős és programozási feladat. \\
+  F4  & oktató    & Programozási feladathoz tesztesetek megadása (bemenet, elvárt kimenet), mindegyikről eldöntve, hogy nyilvános példateszt vagy rejtett. \\
+  F5  & hallgató  & Az elérhető vizsgák listájának megtekintése, vizsga elindítása az időablakon belül, vizsgánként egyszer. \\
+  F6  & hallgató  & Feladatok kitöltése visszaszámlálóval, a válaszok automatikus mentése. \\
+  F7  & hallgató  & Programkód próbafuttatása saját bemenettel vagy a nyilvános példatesztekkel; a kód beküldése értékelésre. \\
+  F8  & hallgató  & Vizsga beadása; az idő lejártakor automatikus beadás. \\
+  F9  & hallgató  & Az eredmény megtekintése a beadás után, feladatonkénti pontszámmal és oktatói visszajelzéssel. \\
+  F10 & rendszer  & A zárt, a rövid szöveges és a programozási feladatok automatikus pontozása. \\
+  F11 & oktató    & A vizsga élő felügyelete: a hallgatók jelenlétének és ablakelhagyásainak valós idejű megjelenítése. \\
+  F12 & oktató    & Eredmények megtekintése, kifejtős feladatok pontozása, automatikus pontszám felülírása, szöveges visszajelzés. \\
+  F13 & oktató    & Eredmények exportálása táblázatkezelővel megnyitható (CSV) formátumban; sikertelen kódértékelések újrafuttatása. \\
+  \bottomrule
+\end{longtable}
+
+A rendszer működését egy tipikus forgatókönyv szemlélteti. Az oktató létrehoz egy vizsgát, amely
+egy adott napon 10 és 12 óra között indítható el, és 60 perc alatt kell kitölteni. A vizsgához
+hozzáad egy feleletválasztós, egy rövid válaszos, egy kifejtős és egy programozási feladatot, az
+utóbbihoz két nyilvános és három rejtett tesztesettel. A vizsga napján a hallgató 10:20-kor
+elindítja a vizsgát, így a határideje 11:20 lesz. Kitölti a feladatokat, a programját a
+példatesztekkel kipróbálja, majd beküldi. Közben egyszer átvált egy másik böngészőfülre, amit
+az oktató az élő monitoron azonnal lát. A beadás után a zárt feladatok és a programozási
+feladat pontszáma azonnal elkészül, a kifejtős választ pedig az oktató értékeli, és szöveges
+visszajelzést fűz hozzá, amelyet a hallgató a saját felületén lát.
+
+\subsection{Nem funkcionális követelmények}
+
+A nem funkcionális követelmények közül a biztonsági követelményeket tartottam a
+legfontosabbnak. A webalkalmazások leggyakoribb biztonsági kockázatait összegző OWASP Top Ten
+lista első helyén a hozzáférés-szabályozás hibái szerepelnek \cite{owasp_top10}, ezért külön
+hangsúlyt fektettem arra, hogy minden végpont ellenőrizze a felhasználó szerepkörét és az
+adott erőforráshoz való jogosultságát. A rendszerrel szemben a következő nem funkcionális
+követelményeket fogalmaztam meg:
+\begin{itemize}
+  \item \textbf{Bizalmasság:} a megoldókulcsok, a rejtett tesztesetek és a többi hallgató
+  válaszai semmilyen módon nem juthatnak el a hallgatóhoz; a pontszám csak a beadás után
+  látható.
+  \item \textbf{Elszigetelés:} a hallgatók programjai nem férhetnek hozzá a szerver
+  fájljaihoz és a hálózathoz, és nem meríthetik ki a szerver erőforrásait.
+  \item \textbf{Megbízhatóság:} a hallgató munkája ne vesszen el hálózati hiba, oldalfrissítés
+  vagy a böngésző bezárása esetén sem; rendszerhiba miatt a hallgató ne kapjon nulla pontot.
+  \item \textbf{Igazságosság:} a határidőt a szerver érvényesítse, ne a hallgató számítógépének
+  órája; mindenki ugyanannyi időt kapjon.
+  \item \textbf{Válaszidő:} egy programozási feladat értékelése néhány másodpercen belül
+  elkészüljön, a felügyeleti jelzés pedig érzékelhető késés nélkül jelenjen meg.
+  \item \textbf{Hordozhatóság és telepíthetőség:} a rendszer Windows, Linux és macOS
+  operációs rendszeren is futtatható legyen, minimális telepítési lépéssel.
+\end{itemize}

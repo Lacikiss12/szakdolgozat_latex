@@ -1,0 +1,29 @@
+% Belső címlap: cím, hallgató neve, szakja, e-mail címe, konzulens neve,
+% beosztása, intézete, a dolgozat helye (Miskolc) és éve (4. pont)
+\begin{titlepage}
+\begin{center}
+  {\large\textsc{\egyetem}}\\[0.3em]
+  {\large \kar}\\[0.3em]
+  {\large \konzulensIntezet}
+
+  \vspace*{\stretch{2}}
+
+  {\Large\textbf{SZAKDOLGOZAT}}\\[2em]
+  \begin{spacing}{1.2}
+  {\LARGE\bfseries \dolgozatCim\par}
+  \end{spacing}
+
+  \vspace*{\stretch{3}}
+
+  \begin{tabular}{@{}p{0.45\textwidth}@{\hspace{0.1\textwidth}}p{0.45\textwidth}@{}}
+    \textbf{Készítette:}           & \textbf{Konzulens:} \\
+    \hallgatoNev                   & \konzulensNev \\
+    \hallgatoSzak                  & \konzulensBeosztas \\
+    \texttt{\hallgatoEmail}        & \konzulensIntezet \\
+  \end{tabular}
+
+  \vspace*{\stretch{1}}
+
+  {\large \hely, \ev}
+\end{center}
+\end{titlepage}

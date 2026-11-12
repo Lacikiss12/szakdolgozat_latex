@@ -1,0 +1,80 @@
+\chapter{A rendszer tervezése}
+\label{ch:tervezes}
+% Terjedelem: kb. 7–8 oldal (~12 000 karakter)
+
+\section{Követelmények}
+\subsection{Funkcionális követelmények}
+% Szerepkörök: hallgató, oktató (meghívókóddal regisztrál).
+% Oktató: vizsga létrehozása (időablak + időtartam), feladatok típusonként, élő monitor,
+%   eredmények, kézi pontozás + visszajelzés, CSV export, újraértékelés.
+% Hallgató: vizsga indítása, visszaszámláló, automatikus mentés, próbafuttatás, beadás, eredmény.
+\todo{Szöveg}
+
+\subsection{Nem funkcionális követelmények}
+% Biztonság (megoldókulcs sosem jut a klienshez, sandbox), használhatóság, hordozhatóság (Docker).
+\todo{Szöveg}
+
+\section{Architektúra}
+% Háromrétegű felépítés: Next.js kliens – FastAPI + Socket.IO szerver – PostgreSQL,
+% mellette a Docker sandbox. Ide jön egy ábra (abrak/architektura.png):
+\todo{Szöveg, ábra: \ref{fig:architektura}.~ábra}
+
+\begin{figure}[H]
+  \centering
+  % \includegraphics[width=0.9\textwidth]{architektura}
+  \fbox{\parbox[c][4cm][c]{0.8\textwidth}{\centering Helyőrző: architektúra ábra}}
+  \caption{A rendszer architektúrája}
+  \label{fig:architektura}
+\end{figure}
+
+\section{Adatmodell}
+% Entitások: User, Exam, Question, Attempt, Answer – ER-diagram + magyarázat.
+% Fontos tervezési döntések: egy hallgató/vizsga = egy Attempt (UNIQUE), egy válasz/feladat (UNIQUE),
+% answer_key JSON típusonként eltérő szerkezettel, manual_score felülírja az auto_score-t.
+A rendszer adattábláit a \ref{tab:adatmodell}.~táblázat foglalja össze.
+
+\begin{table}[H]
+  \centering
+  \caption{Az adatmodell táblái}
+  \label{tab:adatmodell}
+  \begin{tabularx}{\textwidth}{@{}lX@{}}
+    \toprule
+    Tábla & Szerep és fontosabb mezők \\
+    \midrule
+    \texttt{users}     & felhasználók; e-mail, név, jelszó-hash, szerepkör (\texttt{student}/\texttt{teacher}) \\
+    \texttt{exams}     & vizsgák; cím, időtartam (perc), kezdési és záró időpont, létrehozó oktató \\
+    \texttt{questions} & feladatok; típus, pontszám, válaszlehetőségek, megoldókulcs (JSON) \\
+    \texttt{attempts}  & kitöltések; kezdés, határidő, befejezés, szabálysértések száma \\
+    \texttt{answers}   & válaszok; válasz (JSON), automatikus és kézi pontszám, visszajelzés, állapot \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{A REST API terve}
+\begin{table}[H]
+  \centering
+  \caption{A REST API fontosabb végpontjai}
+  \label{tab:api}
+  \small
+  \begin{tabularx}{\textwidth}{@{}lp{6.2cm}X@{}}
+    \toprule
+    Metódus & Végpont & Funkció \\
+    \midrule
+    POST   & \texttt{/auth/register}, \texttt{/auth/login} & regisztráció, bejelentkezés (JWT) \\
+    POST   & \texttt{/exams/} & vizsga létrehozása (oktató) \\
+    POST   & \texttt{/exams/\{id\}/questions} & feladat hozzáadása \\
+    POST   & \texttt{/exams/\{id\}/attempt} & kitöltés indítása (hallgató) \\
+    PUT    & \texttt{/attempts/\{id\}/answers/\{qid\}} & válasz mentése \\
+    POST   & \texttt{/attempts/\{id\}/run} & kód próbafuttatása \\
+    POST   & \texttt{/attempts/\{id\}/finish} & végleges beadás \\
+    GET    & \texttt{/exams/\{id\}/results(.csv)} & eredmények, CSV export \\
+    PATCH  & \texttt{/answers/\{id\}/grade} & kézi pontozás \\
+    POST   & \texttt{/exams/\{id\}/regrade} & újraértékelés \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Biztonsági terv}
+% Fenyegetések és ellenintézkedések: jogosultság (csak a saját vizsga), megoldókulcs elrejtése,
+% Socket.IO JWT-hitelesítés, sandbox korlátok.
+\todo{Szöveg}

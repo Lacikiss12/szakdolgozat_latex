@@ -1,0 +1,86 @@
+% =====================================================================
+%  Formai beállítások a „A szakdolgozat formai és tartalmi követelményei”
+%  dokumentum alapján (a pontszámok arra utalnak)
+% =====================================================================
+
+% --- Betűtípus (24. pont: Times New Roman) – XeLaTeX kell hozzá -------
+\usepackage{fontspec}
+\setmainfont{Times New Roman}
+\setmonofont{Consolas}[Scale=0.88]   % programkódhoz
+
+% --- Nyelv ------------------------------------------------------------
+\usepackage[english,magyar]{babel}   % az utolsó a fő nyelv
+\usepackage{csquotes}                 % \enquote{...} -> „...”
+
+% --- Margók (25. pont: bal 3 cm, többi 2,5 cm), A4 --------------------
+\usepackage[a4paper,left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+
+% --- Sortávolság (25. pont: másfeles) ---------------------------------
+% A 12pt-s report osztályban a lábjegyzet (\footnotesize) eleve 10pt.
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Címsorok (26. pont: fejezetcím középre, a többi balra) -----------
+% (27. pont: minden fejezet új oldalon kezdődik – ezt a report osztály adja)
+\usepackage{titlesec}
+\titleformat{\chapter}{\normalfont\Large\bfseries\centering}{\thechapter.}{0.6em}{}
+\titleformat{name=\chapter,numberless}{\normalfont\Large\bfseries\centering}{}{0pt}{}
+\titlespacing*{\chapter}{0pt}{0pt}{1.5em}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection.}{0.6em}{}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+
+% --- Ábrák, táblázatok (9–10. pont: számozva, címmel) -----------------
+\usepackage{graphicx}
+\graphicspath{{abrak/}}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{float}
+\usepackage{enumitem}
+\setlist{nosep}
+
+% --- Programkód -------------------------------------------------------
+\usepackage{xcolor}
+\usepackage{listings}
+\renewcommand{\lstlistingname}{kódrészlet}
+\renewcommand{\lstlistlistingname}{Kódrészletek jegyzéke}
+\lstset{
+  basicstyle=\ttfamily\small\setstretch{1},
+  keywordstyle=\color{blue!60!black}\bfseries,
+  commentstyle=\color{green!40!black}\itshape,
+  stringstyle=\color{red!50!black},
+  numbers=left, numberstyle=\tiny\color{gray}, numbersep=6pt,
+  frame=single, rulecolor=\color{gray!50},
+  breaklines=true, showstringspaces=false, tabsize=4,
+  captionpos=b, columns=fullflexible, keepspaces=true,
+}
+\lstdefinelanguage{TypeScript}{
+  language=Java,
+  morekeywords={const,let,async,await,function,interface,type,export,import,from,useState,useEffect},
+  morestring=[b]', morestring=[b]`,
+}
+
+% --- Irodalomjegyzék (7., 8., 11. pont) -------------------------------
+% Egységes, számozott hivatkozás: [3], szó szerinti idézetnél oldalszámmal: [3, 45. o.]
+\usepackage[backend=biber,style=numeric,sorting=none,urldate=iso,seconds=true]{biblatex}
+\addbibresource{irodalom.bib}
+\DefineBibliographyStrings{magyar}{urlseen={Letöltve:}}
+
+% --- Mellékletek, PDF lapok beillesztése (feladatkiírás stb.) ---------
+\usepackage{pdfpages}
+
+% --- Kattintható hivatkozások (utolsónak) -----------------------------
+\usepackage[hidelinks]{hyperref}
+
+% --- Saját parancsok --------------------------------------------------
+% Kitöltendő helyek jelölése: pirosan látszik a PDF-ben, hogy ne maradjon benne
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[#1]}}}
+% Ha a megadott PDF létezik, beilleszti; különben egy helyőrző oldalt tesz be
+\newcommand{\beillesztPDF}[2]{%
+  \IfFileExists{#1}{\includepdf[pages=-]{#1}}{%
+    \thispagestyle{empty}\null\vfill
+    \begin{center}\Large\textcolor{red}{\textbf{[#2]}}\\[1em]
+    \normalsize Ide kerül az aláírt, beszkennelt lap: \texttt{\detokenize{#1}}\end{center}\vfill\clearpage}}

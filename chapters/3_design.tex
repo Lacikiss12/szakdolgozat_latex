@@ -1,0 +1,341 @@
+%!TEX root = ../dolgozat.tex
+\chapter{Tervezés}
+\label{ch:tervezes}
+
+Ebben a fejezetben \mref{ch:koncepcio}ben megfogalmazott követelmények alapján elkészített
+rendszertervet mutatom be. Először a rendszer architektúráját és a fő komponenseket ismertetem,
+majd az adatmodellt, a REST API felépítését, a vizsgafolyamat állapotait és a valós idejű
+felügyelet működését. A fejezet végén összefoglalom a tervezés során azonosított biztonsági
+fenyegetéseket és az ellenük tervezett intézkedéseket.
+
+\section{A rendszer architektúrája}
+\label{sec:architektura}
+
+A rendszer klasszikus háromrétegű webes architektúrát követ, amelyet egy negyedik, a programkódok
+futtatására szolgáló elem egészít ki (\mref{fig:architektura}). A \textit{megjelenítési réteget} a
+böngészőben futó Next.js alkalmazás alkotja, amely a hallgatói és az oktatói felületet egyaránt
+tartalmazza. Az \textit{alkalmazási réteg} a FastAPI alapú szerver, amely a REST API-n keresztül
+szolgálja ki a klienseket, és ugyanebben a folyamatban fut a valós idejű kommunikációt kezelő
+Socket.IO szerver is. Az \textit{adatréteget} a PostgreSQL adatbázis jelenti. A hallgatók
+programjait a szerver nem saját maga futtatja, hanem a Docker szolgáltatáson keresztül minden
+kiértékeléshez egy rövid életű, elszigetelt konténert indít.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      box/.style={draw, rounded corners, align=center, minimum height=1.0cm, text width=2.5cm, fill=gray!8, font=\small},
+      big/.style={draw, rounded corners, align=center, minimum height=2.4cm, text width=3.3cm, fill=blue!6, font=\small},
+      arr/.style={-{Latex[length=2.2mm]}, thick},
+      darr/.style={{Latex[length=2.2mm]}-{Latex[length=2.2mm]}, thick},
+      lbl/.style={font=\scriptsize, align=center}]
+    \node[box] (hallg) at (0,0.75) {Hallgatói kliens\\\footnotesize(böngésző)};
+    \node[box] (okt) at (0,-0.75) {Oktatói kliens\\\footnotesize(böngésző)};
+    \node[draw, dashed, rounded corners, fit=(hallg)(okt), inner sep=0.2cm,
+          label={[font=\footnotesize]above:Next.js alkalmazás}] (front) {};
+    \node[big] (back) at (5.5,0) {\textbf{Szerver} (uvicorn)\\[2pt]FastAPI -- REST API\\Socket.IO szerver\\\footnotesize SQLAlchemy, Docker SDK};
+    \node[box] (db) at (10.8,0.8) {PostgreSQL\\\footnotesize adatbázis};
+    \node[box] (sb) at (10.8,-0.8) {Sandbox konténer\\\scriptsize\texttt{python:3.11-slim}};
+    \draw[darr] (front.east |- 0,0.5) -- node[lbl, above]{HTTP / JSON\\(REST, JWT)} (back.west |- 0,0.5);
+    \draw[darr] (front.east |- 0,-0.5) -- node[lbl, below]{Socket.IO\\(WebSocket)} (back.west |- 0,-0.5);
+    \draw[darr] (back.east |- db.west) -- node[lbl, above]{SQL} (db.west);
+    \draw[arr] (back.east |- sb.west) -- node[lbl, below]{Docker API} (sb.west);
+  \end{tikzpicture}
+  \caption{A rendszer architektúrája}
+  \label{fig:architektura}
+\end{figure}
+
+A szerver és a kliensek között kétféle kapcsolat létezik. A REST API-n keresztül zajlik minden
+olyan művelet, amely az adatok lekérdezésével vagy módosításával jár: a bejelentkezés, a vizsgák
+és feladatok kezelése, a válaszok mentése és a kódfuttatás. A Socket.IO kapcsolat kizárólag a
+felügyeleti eseményeket továbbítja. Ezt a szétválasztást tudatosan terveztem így: a vizsga
+lebonyolításához szükséges összes funkció a valós idejű kapcsolat nélkül is működik, így ha az
+például egy hálózati eszköz miatt nem jön létre, a hallgató akkor is zavartalanul kitöltheti a
+vizsgát.
+
+A szerveroldali alkalmazást rétegekre bontottam (\mref{tab:retegek}). Az API réteg csak a kérések
+fogadásáért, a jogosultság ellenőrzéséért és a válasz összeállításáért felel, az üzleti logika
+(a pontozás, a kódfuttatás és a felügyelet) a szolgáltatási rétegben kapott helyet. Ennek
+előnye, hogy a pontozási szabályok egy helyen vannak, és több végpont -- a beküldés, a beadás, a
+lejárt kitöltések lezárása és az oktatói újraértékelés -- is ugyanazt a kódot használja.
+
+\begin{table}[H]
+  \centering
+  \caption{A szerveroldali alkalmazás rétegei}
+  \label{tab:retegek}
+  \begin{tabularx}{\textwidth}{@{}lX@{}}
+    \toprule
+    Könyvtár & Feladat \\
+    \midrule
+    \texttt{app/api}      & REST végpontok: hitelesítés, vizsgák és feladatok, kitöltések, eredmények \\
+    \texttt{app/schemas}  & Pydantic sémák: a be- és kimenő adatok szerkezete, ellenőrzése, szerepkör szerinti nézetek \\
+    \texttt{app/services} & üzleti logika: pontozás, sandbox, Socket.IO események \\
+    \texttt{app/models}   & SQLAlchemy ORM modellek (adatbázistáblák) \\
+    \texttt{app/core}     & adatbázis-kapcsolat, jelszó- és tokenkezelés, időkezelés \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Adatmodell}
+\label{sec:adatmodell}
+
+Az adatmodell öt entitásból áll, ezek kapcsolatait \aref{fig:adatmodell}. ábra mutatja. A
+\texttt{User} a felhasználókat tárolja szerepkörükkel együtt. Az \texttt{Exam} egy vizsgát ír le,
+amelyet egy oktató hoz létre, és amelyhez több \texttt{Question}, vagyis feladat tartozik. Az
+\texttt{Attempt} egy hallgató egy vizsgakitöltését jelenti a kezdés, a határidő és a befejezés
+időpontjával, valamint a felügyelet által rögzített szabálysértések számával. Az \texttt{Answer}
+egy kitöltésen belül egy feladatra adott választ és annak értékelését tárolja.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      ent/.style={rectangle split, rectangle split parts=2, draw, rounded corners=2pt,
+                  align=flush left, font=\footnotesize, fill=gray!6, text width=3.55cm,
+                  rectangle split part fill={blue!12,gray!4}},
+      rel/.style={thick},
+      card/.style={font=\scriptsize, inner sep=1.5pt},
+      node distance=1.0cm and 1.3cm]
+    \node[ent] (user) {\textbf{User}\nodepart{two}id\\email (egyedi)\\full\_name\\hashed\_password\\role};
+    \node[ent, right=1.6cm of user] (exam) {\textbf{Exam}\nodepart{two}id\\title, description\\duration\_minutes\\start\_time, end\_time\\created\_by (FK)};
+    \node[ent, right=1.6cm of exam] (question) {\textbf{Question}\nodepart{two}id, exam\_id (FK)\\position, type\\title, description\\points, options (JSON)\\answer\_key (JSON)};
+    \node[ent, below=1.6cm of exam] (attempt) {\textbf{Attempt}\nodepart{two}id\\user\_id (FK)\\exam\_id (FK)\\started\_at, deadline\\finished\_at\\violations};
+    \node[ent, below=1.6cm of question] (answer) {\textbf{Answer}\nodepart{two}id\\attempt\_id (FK)\\question\_id (FK)\\response (JSON)\\auto\_score\\manual\_score\\feedback, eval\_output\\status};
+    \draw[rel] (user.east) -- node[card, above, pos=0.15]{1} node[card, above, pos=0.85]{N} node[card, below]{létrehoz} (exam.west);
+    \draw[rel] (exam.east) -- node[card, above, pos=0.15]{1} node[card, above, pos=0.85]{N} (question.west);
+    \draw[rel] (user.south) |- node[card, left, pos=0.1]{1} node[card, above, pos=0.9]{N} node[card, below, pos=0.75]{kitölt} (attempt.west);
+    \draw[rel] (exam.south) -- node[card, right, pos=0.15]{1} node[card, right, pos=0.85]{N} (attempt.north);
+    \draw[rel] (attempt.east) -- node[card, above, pos=0.15]{1} node[card, above, pos=0.85]{N} (answer.west);
+    \draw[rel] (question.south) -- node[card, right, pos=0.15]{1} node[card, right, pos=0.85]{N} (answer.north);
+  \end{tikzpicture}
+  \caption{Az adatmodell entitásai és kapcsolataik}
+  \label{fig:adatmodell}
+\end{figure}
+
+Az adatmodell kialakításakor több fontos tervezési döntést hoztam. Az első a különböző
+feladattípusok egységes kezelése. Ahelyett, hogy minden feladattípushoz külön táblát hoztam
+volna létre, egyetlen \texttt{Question} táblát használok, amelyben a típusonként eltérő
+szerkezetű adatok -- a válaszlehetőségek és a megoldókulcs -- JSON típusú oszlopokba kerülnek
+(\mref{tab:megoldokulcs}). Ugyanígy az \texttt{Answer} tábla \texttt{response} oszlopa is JSON:
+választós feladatnál a megjelölt lehetőségek indexeinek listáját, a többi feladattípusnál pedig
+a válasz szövegét tartalmazza. Ez a megoldás egyszerűvé teszi új feladattípus bevezetését, az
+adatok szerkezetének helyességét azonban így nem az adatbázis, hanem az alkalmazás (a Pydantic
+sémák) ellenőrzi.
+
+\begin{table}[H]
+  \centering
+  \caption{A megoldókulcs szerkezete feladattípusonként}
+  \label{tab:megoldokulcs}
+  \small
+  \begin{tabularx}{\textwidth}{@{}lX@{}}
+    \toprule
+    Feladattípus & A megoldókulcs (\texttt{answer\_key}) tartalma \\
+    \midrule
+    egyválasztós, igaz--hamis & a helyes válasz indexe egyelemű listában, pl. \texttt{[1]} \\
+    több választós            & a helyes válaszok indexeinek listája, pl. \texttt{[0, 1, 3]} \\
+    rövid szöveges            & az elfogadott válaszok listája, pl. \texttt{["3.14"]} \\
+    programozási              & tesztesetek listája: \texttt{\{input, expected\_output, public\}} \\
+    kifejtős                  & nincs (kézi javítás) \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+A második döntés az adatintegritás adatbázis-szintű biztosítása. Az \texttt{Attempt} táblán egy
+egyedi megszorítás biztosítja, hogy egy hallgató egy vizsgát csak egyszer töltsön ki, az
+\texttt{Answer} táblán pedig egy másik megszorítás azt, hogy egy kitöltésen belül minden
+feladatra legfeljebb egy válasz tartozzon. Ezeket a szabályokat az alkalmazás is ellenőrzi, az
+adatbázis-szintű megszorítás azonban az egyidejű kérések esetén is garantálja a helyességet.
+
+A harmadik döntés az automatikus és a kézi pontszám külön tárolása. Az \texttt{Answer} rekord
+\texttt{auto\_score} mezője a rendszer által számolt, a \texttt{manual\_score} mezője az oktató
+által adott pontszámot tartalmazza. Az érvényes pontszám a kézi pontszám, ha az létezik, egyébként
+az automatikus. Így az oktatói felülírás bármikor visszavonható, és utólag is ellenőrizhető, mit
+számolt a rendszer. A válasz állapotát a \texttt{status} mező tárolja, amelynek lehetséges értékeit
+\aref{sec:folyamat}. szakaszban ismertetem.
+
+Végül az időpontokat minden esetben egyezményes világidőben (UTC), időzóna-információval együtt
+tárolom, és a kliens csak a megjelenítéskor alakítja át helyi időre. Ez elkerüli a nyári és téli
+időszámítás közötti váltásból, valamint a szerver és a kliens eltérő időzónájából adódó hibákat.
+
+\section{A REST API terve}
+\label{sec:api}
+
+Az API tervezésénél a REST elveit követtem: az erőforrásokat főnevekből álló URL-ek azonosítják,
+a műveleteket a HTTP metódusok fejezik ki. A fontosabb végpontokat \aref{tab:api}. táblázat
+tartalmazza. A hallgatói kitöltés indítására a \texttt{POST /exams/\{id\}/attempt} végpontot
+terveztem úgy, hogy ismételt hívás esetén ne hozzon létre új kitöltést, hanem a már folyamatban
+lévőt adja vissza. Ez a művelet így idempotens, vagyis az oldal frissítése vagy egy megismételt
+kérés nem okoz hibát.
+
+\begin{table}[H]
+  \centering
+  \caption{A REST API fontosabb végpontjai}
+  \label{tab:api}
+  \small
+  \begin{tabularx}{\textwidth}{@{}lp{6.3cm}lX@{}}
+    \toprule
+    Metódus & Végpont & Jog & Funkció \\
+    \midrule
+    POST   & \texttt{/auth/register}, \texttt{/auth/login} & -- & regisztráció, bejelentkezés \\
+    GET    & \texttt{/exams/} & mindkettő & vizsgák listája \\
+    POST   & \texttt{/exams/} & oktató & vizsga létrehozása \\
+    POST   & \texttt{/exams/\{id\}/questions} & oktató & feladat hozzáadása \\
+    POST   & \texttt{/exams/\{id\}/attempt} & hallgató & kitöltés indítása vagy folytatása \\
+    PUT    & \texttt{/attempts/\{id\}/answers/\{qid\}} & hallgató & válasz mentése \\
+    POST   & \texttt{/attempts/\{id\}/run} & hallgató & kód próbafuttatása \\
+    POST   & \texttt{/attempts/\{id\}/answers/\{qid\}}\newline\texttt{/evaluate} & hallgató & kód beküldése értékelésre \\
+    POST   & \texttt{/attempts/\{id\}/finish} & hallgató & végleges beadás \\
+    GET    & \texttt{/exams/\{id\}/results(.csv)} & oktató & eredmények, CSV export \\
+    PATCH  & \texttt{/answers/\{id\}/grade} & oktató & kézi pontozás, visszajelzés \\
+    POST   & \texttt{/exams/\{id\}/regrade} & oktató & sikertelen értékelések újrafuttatása \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+A hibák jelzésére a HTTP szabványos állapotkódjait használom, egységes jelentéssel
+(\mref{tab:statuszkodok}). A hibaüzenetek szövege magyar nyelvű, így a kliens azokat
+változtatás nélkül megjelenítheti a felhasználónak.
+
+\begin{table}[H]
+  \centering
+  \caption{A használt hibakódok jelentése}
+  \label{tab:statuszkodok}
+  \small
+  \begin{tabularx}{\textwidth}{@{}lX@{}}
+    \toprule
+    Kód & Jelentés a rendszerben \\
+    \midrule
+    400 Bad Request          & hibás kérés, pl. foglalt e-mail cím, érvénytelen meghívókód \\
+    401 Unauthorized         & hiányzó, érvénytelen vagy lejárt token, hibás jelszó \\
+    403 Forbidden            & nincs jogosultság: más szerepkör, más oktató vizsgája, időablakon kívüli indítás \\
+    404 Not Found            & nem létező vagy nem a felhasználóhoz tartozó erőforrás \\
+    409 Conflict             & a kitöltés már lezárult (beadva vagy lejárt), módosítás nem lehetséges \\
+    422 Unprocessable Entity & a beküldött adatok nem felelnek meg a szabályoknak (validációs hiba) \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Megemlítendő, hogy ha egy hallgató egy másik hallgató kitöltésére hivatkozik, a szerver nem
+\texttt{403}, hanem \texttt{404} választ ad. Ennek az az oka, hogy a \texttt{403} válasz elárulná,
+hogy az adott azonosítójú kitöltés létezik, ami -- bár kis mértékben -- információt szivárogtatna
+ki a rendszerről.
+
+\section{A vizsgafolyamat terve}
+\label{sec:folyamat}
+
+Egy kitöltés életciklusa egyszerű állapotgéppel írható le (\mref{fig:allapotok}). A kitöltés a
+vizsga elindításával jön létre, ekkor a szerver kiszámítja a határidőt. Folyamatban lévő
+állapotában a hallgató mentheti a válaszait és futtathatja a kódját. A kitöltés kétféleképpen
+zárulhat le: a hallgató beadja, vagy lejár a határideje. A lezárás után a válaszok már nem
+módosíthatók, a rendszer pedig minden még nem értékelt választ kiértékel.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      st/.style={draw, rounded corners=8pt, align=center, minimum height=0.9cm, minimum width=2.6cm, fill=blue!6, font=\small},
+      arr/.style={-{Latex[length=2.2mm]}, thick},
+      lbl/.style={font=\scriptsize, align=center},
+      node distance=0.9cm and 2.4cm]
+    \node[circle, fill=black, inner sep=3pt] (init) {};
+    \node[st, right=1.4cm of init] (fut) {Folyamatban};
+    \node[st, right=2.3cm of fut] (lez) {Lezárva};
+    \node[st, right=3.0cm of lez] (ert) {Minden válasz\\értékelve};
+    \draw[arr] (init) -- node[lbl, above]{indítás} (fut);
+    \draw[arr] (fut) to[bend left=30] node[lbl, above]{beadás} (lez);
+    \draw[arr] (fut) to[bend right=30] node[lbl, below, pos=0.6]{határidő lejárt} (lez);
+    \draw[arr] (fut) to[out=-120, in=-60, looseness=6] node[lbl, below]{mentés, kódfuttatás} (fut);
+    \draw[arr] (lez) -- node[lbl, above]{automatikus\\értékelés} node[lbl, below]{(kifejtősnél:\\kézi javítás)} (ert);
+  \end{tikzpicture}
+  \caption{Egy kitöltés állapotai}
+  \label{fig:allapotok}
+\end{figure}
+
+Az egyes válaszok értékelési állapotát külön mező tárolja, amelynek három értéke lehet.
+A \textit{nem értékelt} (\texttt{not\_graded}) állapotú válasz még nem kapott pontszámot: ilyen a
+vizsga közben mentett válasz, vagy az a programozási feladat, amelynek értékelése rendszerhiba
+miatt nem sikerült. Az \textit{értékelt} (\texttt{graded}) válasz automatikusan vagy kézzel
+megkapta a pontszámát. A \textit{javításra váró} (\texttt{pending\_review}) állapotba a kifejtős
+válaszok kerülnek a beadáskor, és az oktató pontozásáig ott maradnak. A hallgató a válasz
+módosításakor visszakerül a nem értékelt állapotba, így egy korábban beküldött, de azóta
+megváltoztatott kód eredménye nem marad érvényben.
+
+A határidő kezelését úgy terveztem, hogy az a szerveren, és ne a kliensen dőljön el. A
+határidőt a kitöltés indításakor a szerver számítja ki és tárolja el, a kliens csak megjeleníti.
+A lejárt kitöltéseket nem egy időzített háttérfolyamat zárja le, hanem a rendszer minden olyan
+kérésnél ellenőrzi és szükség esetén lezárja, amely a kitöltéshez hozzáfér. Ez a ,,lusta''
+megközelítés egyszerűbbé teszi a rendszert, hiszen nincs szükség ütemezőre, és a lezárás
+eredménye akkor is helyes, ha a szerver a határidő pillanatában éppen nem futott.
+
+\section{A valós idejű felügyelet terve}
+\label{sec:felugyelet_terv}
+
+A felügyelet résztvevői a hallgatói kliens, a szerver és az oktatói kliens. A kommunikáció
+menetét \aref{fig:szekvencia}. ábra szekvenciadiagramja mutatja be. Mindkét kliens a JWT
+tokenjével csatlakozik a szerverhez, majd a \texttt{join\_exam} üzenettel belép a vizsga
+szobájába. Az oktató belépéskor egy pillanatképet kap az összes kitöltés aktuális állapotáról, így
+a vizsga közben csatlakozva, vagy az oldal frissítése után is teljes képet lát. Ha a hallgató
+elhagyja a vizsgaablakot, a kliense \texttt{report\_violation} üzenetet küld, a szerver
+eltárolja az eseményt az adatbázisban, majd \texttt{violation\_alert} üzenettel továbbítja a
+szoba többi tagjának, vagyis az oktatónak.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      head/.style={draw, fill=blue!8, rounded corners=2pt, minimum width=3.0cm, minimum height=0.75cm, font=\small, align=center},
+      msg/.style={-{Latex[length=2mm]}, thick},
+      ret/.style={-{Latex[length=2mm]}, thick, dashed},
+      lbl/.style={font=\scriptsize, above, align=center},
+      x=1cm, y=-0.72cm]
+    \node[head] (h) at (0,0) {Hallgatói kliens};
+    \node[head] (s) at (6,0) {Szerver};
+    \node[head] (o) at (12,0) {Oktatói kliens};
+    \foreach \n in {h,s,o} \draw[gray, dashed] (\n.south) -- ++(0,11.0);
+    \draw[msg] (12,1.3) -- node[lbl]{connect (JWT) + join\_exam} (6,1.3);
+    \draw[ret] (6,2.3) -- node[lbl]{monitor\_snapshot} (12,2.3);
+    \draw[msg] (0,3.3) -- node[lbl]{connect (JWT) + join\_exam} (6,3.3);
+    \draw[ret] (6,4.3) -- node[lbl]{student\_joined} (12,4.3);
+    \node[font=\scriptsize, align=left, anchor=west, fill=yellow!15, draw=gray!50] at (0.2,5.2) {ablak elhagyása (blur / visibilitychange)};
+    \draw[msg] (0,6.4) -- node[lbl]{report\_violation} (6,6.4);
+    \node[font=\scriptsize, fill=white, draw=gray!50, anchor=west] at (6.2,7.2) {violations += 1 (adatbázis)};
+    \draw[ret] (6,8.3) -- node[lbl]{violation\_alert} (12,8.3);
+    \draw[msg] (0,9.4) -- node[lbl]{exam\_finished (beadás után)} (6,9.4);
+    \draw[ret] (6,10.4) -- node[lbl]{student\_finished} (12,10.4);
+  \end{tikzpicture}
+  \caption{A valós idejű felügyelet üzenetváltásai}
+  \label{fig:szekvencia}
+\end{figure}
+
+A felügyelet tervezésénél fontos szempont volt, hogy a kliens által küldött adatokban a szerver ne
+bízzon meg. A felhasználó nevét és szerepkörét a szerver a token alapján az adatbázisból olvassa
+ki, a szobába lépést pedig jogosultsághoz köti: oktató csak a saját vizsgájának szobájába
+léphet be, hallgató pedig csak akkor, ha az adott vizsgán folyamatban lévő kitöltése van. A
+beadás jelzését (\texttt{exam\_finished}) a szerver csak akkor továbbítja, ha az adatbázis szerint
+a kitöltés valóban lezárult.
+
+\section{Biztonsági terv}
+\label{sec:biztonsagi_terv}
+
+A tervezés során összegyűjtöttem a rendszert fenyegető főbb veszélyeket, és mindegyikhez
+ellenintézkedést rendeltem. Ezeket \aref{tab:fenyegetesek}. táblázat foglalja össze. A
+megvalósítás részleteit \aref{ch:megvalositas}. fejezetben, a védelmek ellenőrzését pedig
+\aref{ch:teszteles}. fejezetben mutatom be.
+
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{5.2cm}>{\raggedright\arraybackslash}p{8.8cm}@{}}
+  \caption{Fenyegetések és ellenintézkedések}\label{tab:fenyegetesek}\\
+  \toprule
+  Fenyegetés & Ellenintézkedés \\
+  \midrule
+  \endfirsthead
+  \toprule
+  Fenyegetés & Ellenintézkedés \\
+  \midrule
+  \endhead
+  Jogosulatlan oktatói regisztráció & meghívókód, időzítéses támadásnak ellenálló összehasonlítással \\
+  Jelszavak kiszivárgása adatbázis-incidens esetén & bcrypt hash egyedi sóval \\
+  Más felhasználó adatainak elérése & szerepkör- és tulajdonjog-ellenőrzés minden végponton; idegen kitöltésre 404 válasz \\
+  A megoldókulcs megszerzése & külön hallgatói és oktatói adatséma; a rejtett tesztek részletei nem kerülnek a visszajelzésbe \\
+  Határidő utáni módosítás & a határidőt a szerver érvényesíti; lezárt kitöltés nem módosítható (409) \\
+  Többszöri kitöltés & egyedi megszorítás az adatbázisban (hallgató, vizsga) \\
+  Ártó kód futtatása (erőforrás-kimerítés, fájl- és hálózati hozzáférés) & Docker konténer: memória-, CPU-, folyamat-, idő- és kimenetkorlát; hálózat nélkül; csak olvasható fájlrendszer \\
+  Az értékelés eredményének meghamisítása & a hallgató kódja jogosultság nélküli felhasználóként, külön folyamatban fut; a kimenetét a vezérlő gyűjti \\
+  Hamis felügyeleti események, más szobájába lépés & JWT-hitelesítés csatlakozáskor; a szerepkör az adatbázisból; szobába lépés jogosultsághoz kötve \\
+  \bottomrule
+\end{longtable}

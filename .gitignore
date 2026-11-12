@@ -1,0 +1,16 @@
+build/
+*.aux
+*.log
+*.toc
+*.out
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.xdv
+*.lof
+*.lot
+~$*.docx

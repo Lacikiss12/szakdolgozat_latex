@@ -1,0 +1,63 @@
+%!TEX root = ../dolgozat.tex
+\chapter{Összefoglalás}
+\label{ch:osszefoglalas}
+
+Dolgozatomban egy olyan webes vizsgáztató rendszer prototípusát terveztem meg és készítettem el,
+amely egy vizsgán belül vegyes feladattípusokat kezel, a programozási feladatokat elszigetelt
+Docker-konténerben, tesztesetekkel automatikusan értékeli, és valós időben jelzi az oktatónak, ha
+egy hallgató a vizsga közben elhagyja a vizsgaablakot.
+
+A szakirodalom áttekintése során megismertem a számítógéppel támogatott értékelés lehetőségeit
+és korlátait, a programozási feladatok automatikus értékelésének több évtizedes múltját, valamint
+az online vizsgafelügyelet körüli szakmai és etikai vitát. A hasonló rendszerek vizsgálata azt
+mutatta, hogy a vegyes feladattípusok, a biztonságos kódfuttatás és a valós idejű felügyelet
+ritkán jelenik meg együtt, és ahol igen, ott jelentős üzemeltetési terhet jelent. Ezekre a
+tapasztalatokra építve fogalmaztam meg a rendszer követelményeit.
+
+A megvalósított rendszer hat feladattípust támogat. A zárt és a rövid szöveges feladatokat
+automatikusan pontozza, a több helyes választ tartalmazó feladatoknál a hibás jelöléseket levonó
+részpontozással, a rövid válaszoknál pedig a formai eltéréseket (kis- és nagybetűk, szóközök,
+tizedesjel) figyelmen kívül hagyó összehasonlítással. A programozási feladatokat nyilvános és
+rejtett tesztesetekkel értékeli, a kifejtős feladatokhoz pedig kézi javítási felületet és
+visszajelzési lehetőséget biztosít. A vizsgafolyamatban a határidőt a szerver érvényesíti, a
+válaszok automatikusan mentődnek, és a hallgató munkája akkor sem vész el, ha a vizsga közben
+bezárja a böngészőt.
+
+A tesztelés eredményei alapján a rendszer a kitűzött céloknak megfelel. A 32 funkcionális
+teszteset mindegyike, valamint a valós idejű felügyelet 10 tesztesete is sikeres volt. A sandbox
+biztonsági tesztjei igazolták, hogy a tervezett korlátozások a gyakorlatban is megállítják a
+leggyakoribb támadásokat: a végtelen ciklust, a fork bombát, a túlzott memóriafoglalást, a hálózati
+és a fájlrendszer-hozzáférést. Egy programozási feladat értékelése 20 teszteset esetén is
+nagyjából egy másodperc alatt elkészül, ami annak köszönhető, hogy egy kiértékeléshez csak
+egyetlen konténer indul. A felügyeleti jelzés helyi környezetben 10 milliszekundumon belül
+eljutott az oktatóhoz.
+
+Amit kevésbé sikerültnek tartok, az elsősorban a kódfuttatás eredményének feldolgozása: a
+biztonsági tesztek során kiderült, hogy egy, az eredményjelölő szövegét kiíró program
+megakaszthatta a saját értékelését. Bár ez a pontszám meghamisítására nem adott lehetőséget, és a
+hibát véletlenszerű, futtatásonként generált jelölővel ki is javítottam, jól mutatja, hogy egy nem megbízható kódot futtató rendszernél a vezérlő és a
+futtatott program közötti kommunikációt is ugyanolyan gondosan kell megtervezni, mint magát az
+elszigetelést. Ez a tapasztalat egyben megerősítette bennem, hogy egy ilyen rendszernél a
+szándékosan ártó bemenetekkel végzett tesztelés elengedhetetlen. A felügyelet terén pedig
+tudatosan választottam a korlátozott, de a magánszférát tiszteletben tartó megoldást; véleményem
+szerint egy egyetemi vizsgán ez jobb egyensúlyt jelent, mint a hallgatók kamerás megfigyelése,
+ugyanakkor el kell fogadni, hogy egy elszánt hallgatót ez a módszer nem tart vissza.
+
+A rendszer több irányban is továbbfejleszthető. A legkézenfekvőbb lépés további programozási
+nyelvek (például C, C++ vagy Java) támogatása, amely a sandbox felépítésének köszönhetően
+elsősorban a megfelelő konténerképek és a fordítási lépés hozzáadását jelentené. A kód
+szerkesztését egy szintaxiskiemelést és automatikus kiegészítést nyújtó szerkesztő, például a
+Monaco Editor beépítése tenné kényelmesebbé. Nagyobb létszámú vizsgák esetén a kódértékelést
+egy üzenetsorra és külön feldolgozó folyamatokra (\textit{worker}) érdemes áthelyezni, hogy a
+kiértékelés ne terhelje a webszervert, és a terhelés több gépre is szétosztható legyen. A
+vizsgák tisztaságát a beküldött programok egymás közötti hasonlóságát vizsgáló plágiumkeresés
+segíthetné, az oktatók munkáját pedig a feladatonkénti statisztikák (átlagpontszám, a sikertelen
+tesztesetek eloszlása) és egy feladatbank, amelyből a feladatok több vizsgában is
+újrahasznosíthatók. Végül egy LTI szabvány szerinti integráció lehetővé tenné, hogy a rendszer
+egy meglévő tanulásirányítási rendszerbe, például a Moodle-be illeszkedjen, így a hallgatóknak nem
+kellene külön fiókot létrehozniuk.
+
+Összességében úgy érzem, hogy a dolgozat elkészítése során nemcsak egy működő rendszert hoztam
+létre, hanem a webes alkalmazásfejlesztés, az informatikai biztonság és a konténerizáció terén
+is olyan gyakorlati tapasztalatokat szereztem, amelyeket a későbbi szakmai munkám során is
+hasznosítani tudok.

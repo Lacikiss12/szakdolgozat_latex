@@ -1,0 +1,45 @@
+\chapter{Az online vizsgáztatás szakirodalmi háttere}
+\label{ch:szakirodalom}
+% Terjedelem: kb. 10–12 oldal (~18 000 karakter)
+% 13. pont: a dolgozat 50–60%-a szakirodalomra épüljön -> ez és a 3. fejezet adja a gerincét.
+% Minden állításnál hivatkozás: \cite{kulcs}, szó szerinti idézetnél: \cite[12.~o.]{kulcs}
+
+\section{Számítógéppel támogatott értékelés}
+% E-learning, LMS-ek, a számítógépes értékelés (CAA) fogalma, előnyei/hátrányai.
+% Formatív vs. szummatív értékelés. Források: \cite{bull2004blueprint}
+\todo{Szöveg}
+
+\section{Feladattípusok és automatikus pontozásuk}
+% Zárt (választós, igaz–hamis), félig nyílt (rövid válasz), nyílt (esszé) feladatok.
+% Több jó válaszos feladatok pontozási módszerei (részpontozás, levonás a rossz jelölésért).
+\todo{Szöveg}
+
+\section{Programozási feladatok automatikus értékelése}
+% Teszteset-alapú értékelés, nyilvános és rejtett tesztek, ismert rendszerek (pl. CodeRunner,
+% DOMjudge, Web-CAT). Források: \cite{douce2005automatic,ihantola2010review,paiva2022automated}
+\todo{Szöveg}
+
+\section{Online felügyelet (proctoring) és akadémiai integritás}
+% Proctoring típusai (élő, rögzített, automatizált), böngészőalapú megoldások,
+% adatvédelmi és etikai kérdések. Források: \cite{atoum2017automated,nigam2021systematic,coghlan2021proctor}
+\todo{Szöveg}
+
+\section{Meglévő rendszerek összehasonlítása}
+% Táblázatos összevetés + szöveges értékelés (saját vélemény!). A táblázatra hivatkozni kell:
+A meglévő rendszerek főbb jellemzőit a \ref{tab:osszehasonlitas}.~táblázat foglalja össze.
+
+\begin{table}[H]
+  \centering
+  \caption{Online vizsgáztató rendszerek összehasonlítása \todo{ellenőrizendő}}
+  \label{tab:osszehasonlitas}
+  \begin{tabularx}{\textwidth}{@{}l>{\centering\arraybackslash}X>{\centering\arraybackslash}X>{\centering\arraybackslash}X>{\centering\arraybackslash}X@{}}
+    \toprule
+    Szempont                  & Moodle Quiz & CodeRunner & \todo{?} & Saját rendszer \\
+    \midrule
+    Vegyes feladattípusok     & igen        & részben    &          & igen \\
+    Kódfuttatás sandboxban    & nem         & igen       &          & igen (Docker) \\
+    Rejtett tesztesetek       & --          & igen       &          & igen \\
+    Valós idejű felügyelet    & nem         & nem        &          & igen \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

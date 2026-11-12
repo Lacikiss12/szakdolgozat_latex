@@ -1,0 +1,53 @@
+% =====================================================================
+%  Szakdolgozat – főfájl
+%  Fordítás: latexmk (XeLaTeX + Biber), lásd .latexmkrc
+%  VS Code-ban: mentéskor automatikusan fordul (LaTeX Workshop)
+% =====================================================================
+\documentclass[12pt,a4paper,oneside,openany]{report}
+
+\input{beallitasok}
+\input{adatok}
+
+\begin{document}
+
+% --- 1–3. oldal: aláírt űrlapok (1–3. pont) ---------------------------
+% Szkenneld be PDF-be, és tedd a mellekletek/ mappába ezekkel a nevekkel.
+\beillesztPDF{mellekletek/feladatkiiras.pdf}{Szakdolgozat feladatkiírás lap}
+\beillesztPDF{mellekletek/konzultacios_lap.pdf}{Konzultációs lap}
+\beillesztPDF{mellekletek/eredetisegi_nyilatkozat.pdf}{Eredetiségi nyilatkozat}
+
+% --- Belső címlap (4. pont) -------------------------------------------
+\input{fejezetek/00_cimlap}
+
+% --- Tartalomjegyzék (5. pont) ----------------------------------------
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\tableofcontents
+
+% --- (Opcionális) köszönetnyilvánítás a bevezetés előtt (14. pont) ----
+% \input{fejezetek/00_koszonet}
+
+% --- Főszöveg ---------------------------------------------------------
+\input{fejezetek/01_bevezetes}
+\input{fejezetek/02_szakirodalom}
+\input{fejezetek/03_technologiak}
+\input{fejezetek/04_tervezes}
+\input{fejezetek/05_megvalositas}
+\input{fejezetek/06_teszteles}
+\input{fejezetek/07_osszefoglalas}
+
+% --- Idegen nyelvű összefoglaló, 1–2 oldal (22. pont) -----------------
+\input{fejezetek/08_summary}
+
+% --- Irodalomjegyzék és mellékletek a végén (23. pont) ----------------
+\printbibliography[heading=bibintoc,title={Irodalomjegyzék}]
+
+\listoffigures
+\addcontentsline{toc}{chapter}{Ábrajegyzék}
+\listoftables
+\addcontentsline{toc}{chapter}{Táblázatjegyzék}
+
+\appendix
+\input{fejezetek/09_mellekletek}
+
+\end{document}

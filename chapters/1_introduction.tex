@@ -1,0 +1,52 @@
+%!TEX root = ../dolgozat.tex
+\chapter{Bevezetés}
+\label{ch:bevezetes}
+
+A felsőoktatásban az elmúlt években alapvetően megváltozott a számonkérés módja. A
+COVID-19 járvány idején az egyetemek kényszerből tértek át az online oktatásra és vizsgáztatásra,
+a járvány elmúltával azonban sok intézmény megtartotta a digitális számonkérés bevált elemeit. Az
+online vizsga gyorsabb értékelést, egységesebb pontozást és rugalmasabb szervezést tesz lehetővé, a
+nagy létszámú évfolyamok oktatói számára pedig jelentős tehermentesítést jelent. Ugyanakkor
+olyan kérdéseket is felvet, amelyekre a hagyományos, papíralapú vizsgáknál nem kellett választ
+keresni: hogyan lehet megbízhatóan, igazságosan és biztonságosan értékelni a hallgatók munkáját,
+és hogyan lehet meggyőződni arról, hogy a vizsgázó valóban önállóan dolgozott.
+
+Különösen igaz ez az informatikai képzésekre. Egy programozási feladat megoldását nem elég
+,,elolvasni'', a programot le is kell futtatni, és meg kell vizsgálni, hogy különböző bemenetekre
+helyes eredményt ad-e. Ha ezt az oktató kézzel végzi, a javítás rendkívül időigényes, és a
+pontozás könnyen következetlenné válik: ugyanazt a hibát az egyik dolgozatban észreveszi, a
+másikban nem. Kézenfekvő megoldásnak tűnik a programok automatikus, tesztesetekkel történő
+ellenőrzése, ez azonban újabb nehézséget hoz magával. A szervernek ilyenkor egy ismeretlen
+személy által írt, tetszőleges programkódot kell futtatnia, amely hibából vagy szándékosan
+megpróbálhat kárt tenni a rendszerben: végtelen ciklusba kerülhet, elfogyaszthatja a memóriát,
+vagy hozzáférhet olyan adatokhoz, amelyekhez nem volna szabad.
+
+Témaválasztásomat elsősorban saját hallgatói tapasztalataim motiválták. A tanulmányaim során
+több online vizsgáztató rendszert is használtam, és azt tapasztaltam, hogy ezek vagy általános
+célú tesztrendszerek, amelyek a programozási feladatok értékelésére nem alkalmasak, vagy
+kifejezetten programozási versenyekre készült megoldások, amelyekből hiányoznak az egyetemi
+vizsga megszokott elemei, például a vegyes feladattípusok és a kézi javítás lehetősége. Érdekelt,
+hogy egy modern webes technológiákra épülő, átlátható felépítésű rendszerben hogyan lehet ezt a
+kettőt összekapcsolni, és hogyan lehet a nem megbízható kód futtatását a gyakorlatban is
+biztonságossá tenni.
+
+Dolgozatom célja egy olyan webes vizsgáztató rendszer prototípusának megtervezése és
+elkészítése, amely egy vizsgán belül különböző típusú feladatokat kezel (egy- és több
+választós, igaz--hamis, rövid szöveges, kifejtős és programozási feladatokat), a programozási
+feladatokat izolált Docker-konténerben, nyilvános és rejtett tesztesetekkel automatikusan
+értékeli, és valós időben értesíti az oktatót, ha egy hallgató a vizsga közben elhagyja a
+vizsgaablakot. A munka során a következő kérdésekre kerestem a választ: Milyen eszközökkel
+futtatható biztonságosan egy nem megbízható forrásból származó program? Milyen pontozási
+szabályok igazságosak a részben helyes válaszok esetén? Mennyit ér, és hol vannak a határai a
+böngészőben megvalósítható vizsgafelügyeletnek?
+
+A dolgozat felépítése a következő. \Aref{ch:koncepcio}. fejezetben a számítógéppel támogatott
+értékelés, a programozási feladatok automatikus értékelése és az online vizsgafelügyelet
+szakirodalmát tekintem át, bemutatom a hasonló célú rendszereket és a felhasznált
+technológiákat, majd megfogalmazom a rendszerrel szemben támasztott követelményeket.
+\Aref{ch:tervezes}. fejezet a rendszer architektúráját, adatmodelljét és a főbb folyamatok
+tervét ismerteti. \Aref{ch:megvalositas}. fejezetben a megvalósítás érdekesebb részleteit
+mutatom be, különös tekintettel a kódfuttatás biztonságára és a valós idejű felügyeletre.
+\Aref{ch:teszteles}. fejezet a rendszer funkcionális és biztonsági tesztelésének eredményeit
+tartalmazza, végül \aref{ch:osszefoglalas}. fejezetben összegzem az elért eredményeket, és
+kitérek a továbbfejlesztési lehetőségekre.

@@ -1,0 +1,41 @@
+% TypeScript / TSX stílus (a java.sty mintájára)
+\RequirePackage{listings}
+\RequirePackage{xcolor}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\definecolor{framecolor}{rgb}{0.85,0.85,0.85}
+
+\lstdefinelanguage{TypeScript}{
+  morekeywords={break,case,catch,class,const,continue,default,do,else,export,extends,false,
+    finally,for,from,function,if,import,in,instanceof,interface,let,new,null,return,super,
+    switch,this,throw,true,try,type,typeof,undefined,var,void,while,async,await,of},
+  sensitive=true,
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  morestring=[b]`,
+}
+
+\newcommand\typescriptstyle{\lstset{
+language=TypeScript,
+basicstyle=\ttfamily\small,
+backgroundcolor=\color{codebg},
+keywordstyle=\bfseries\color{deepblue},
+stringstyle=\color{deepgreen},
+commentstyle=\itshape\color{gray},
+frame=single,
+frameround=tttt,
+showstringspaces=false,
+framesep=6pt,
+rulecolor=\color{framecolor},
+breaklines=true,
+}}
+
+\lstnewenvironment{typescript}[1][]
+{\typescriptstyle\lstset{#1}}
+{}
+
+\newcommand\typescriptexternal[2][]{{\typescriptstyle\lstinputlisting[#1]{#2}}}

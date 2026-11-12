@@ -1,0 +1,83 @@
+\chapter{Megvalósítás}
+\label{ch:megvalositas}
+% Terjedelem: kb. 9–10 oldal (~15 000 karakter)
+% Kódrészletből csak a lényeges, rövid részeket! A teljes kód mellékletbe / repóba.
+
+\section{A backend felépítése}
+% Mappaszerkezet: api/ (auth, exams, attempts, results), core/ (database, security, timeutils),
+% models/, schemas/ (Pydantic), services/ (grading, sandbox, socket_server).
+\todo{Szöveg}
+
+\section{Hitelesítés és jogosultságkezelés}
+% bcrypt hash, JWT (HS256, 1 nap), oktatói meghívókód, szerepkör-ellenőrzés.
+\todo{Szöveg}
+
+\section{A vizsgafolyamat és az időkezelés}
+% Kezdés -> határidő = min(kezdés + időtartam, vizsga záró időpontja); 30 mp-es türelmi idő;
+% automatikus mentés; lejáratkor automatikus lezárás (finalize_if_expired).
+\todo{Szöveg}
+
+\section{Az automatikus pontozás}
+% Típusonként. A több jó válaszos feladat képlete:
+A több helyes választ is tartalmazó feladatoknál a rendszer részpontot ad, a hibás jelöléseket
+pedig levonja:
+\begin{equation}
+  P = \max\!\left(0,\ \frac{|S \cap H| - |S \setminus H|}{|H|}\right) \cdot P_{\max},
+  \label{eq:tobbvalasz}
+\end{equation}
+ahol $S$ a megjelölt, $H$ a helyes válaszok halmaza, $P_{\max}$ pedig a feladat pontértéke.
+% Rövid válasz: kis/nagybetű- és szóközfüggetlen, számoknál 3,14 = 3.14.
+% Kódfeladat: pont = sikeres tesztek / összes teszt * pont.
+\todo{Szöveg}
+
+\section{Biztonságos kódfuttatás Docker-sandboxban}
+% Egy konténer / kiértékelés, runner script, nobody felhasználó, kimenet- és időkorlát.
+A konténerre alkalmazott korlátozásokat a \ref{tab:sandbox}.~táblázat, a konténer indítását
+a \ref{lst:sandbox}.~kódrészlet mutatja be.
+
+\begin{table}[H]
+  \centering
+  \caption{A sandbox konténer korlátozásai}
+  \label{tab:sandbox}
+  \begin{tabularx}{\textwidth}{@{}lX@{}}
+    \toprule
+    Korlátozás & Érték, cél \\
+    \midrule
+    Hálózat             & nincs (\texttt{network\_mode="none"}) – adatszivárgás ellen \\
+    Memória             & 128 MB \\
+    CPU                 & 0,5 mag \\
+    Folyamatok száma    & legfeljebb 64 (fork bomb ellen) \\
+    Fájlrendszer        & csak olvasható; \texttt{/tmp}: 16 MB-os tmpfs \\
+    Jogosultságok       & minden capability eldobva, \texttt{no-new-privileges}; a kód \texttt{nobody}-ként fut \\
+    Időkorlát           & 5 mp tesztesetenként \\
+    Kimenet             & legfeljebb 64 KB tesztesetenként \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{lstlisting}[language=Python,caption={A sandbox konténer indítási paraméterei (\texttt{sandbox.py}, részlet)},label={lst:sandbox}]
+run_kwargs = dict(
+    image=SANDBOX_IMAGE,
+    command=["python", "-c", _RUNNER],
+    network_mode="none",
+    mem_limit="128m",
+    nano_cpus=500_000_000,
+    pids_limit=64,
+    read_only=True,
+    tmpfs={"/tmp": "size=16m,mode=1777"},
+    cap_drop=["ALL"],
+    cap_add=["SETUID", "SETGID", "KILL"],
+    security_opt=["no-new-privileges"],
+)
+\end{lstlisting}
+
+\section{Valós idejű felügyelet}
+% Kliens: useProctoring hook (blur + visibilitychange, dupla számolás kiszűrése).
+% Szerver: Socket.IO események (connect JWT-vel, join_exam, report_violation, exam_finished),
+% szobák vizsgánként, a szabálysértések az adatbázisban tárolódnak.
+\todo{Szöveg}
+
+\section{A felhasználói felület}
+% Képernyőképek (abrak/ mappába): bejelentkezés, hallgatói műszerfal, vizsgaoldal kódszerkesztővel,
+% oktatói feladatszerkesztő, élő monitor, eredmények. Minden képre hivatkozz a szövegben!
+\todo{Szöveg és képernyőképek}

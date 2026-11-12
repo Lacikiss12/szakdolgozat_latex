@@ -1,0 +1,80 @@
+\documentclass[12pt,a4paper]{report}
+
+%\includeonly{cover/cimlap, chapters/1_introduction}
+
+\usepackage{styles/dolgozat}
+
+% programkód beillesztéséhez
+\usepackage{listings}
+% listing float neve
+\renewcommand{\lstlistingname}{Programkód}
+%\renewcommand{\lstlistlistingname}{Programkódok listája}
+% ékezetes betűk a kódrészletekben (pdfLaTeX + listings esetén kell)
+\lstset{inputencoding=utf8,extendedchars=true,breaklines=true,literate=
+  {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ö}{{\"o}}1 {ő}{{\H{o}}}1
+  {ú}{{\'u}}1 {ü}{{\"u}}1 {ű}{{\H{u}}}1
+  {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ö}{{\"O}}1 {Ő}{{\H{O}}}1
+  {Ú}{{\'U}}1 {Ü}{{\"U}}1 {Ű}{{\H{U}}}1 {–}{{--}}1}
+%saját listings style-ok, és a style-t használó parancsok definíciói
+%\usepackage{styles/cpp}
+\usepackage{styles/python}
+\usepackage{styles/typescript}
+%\usepackage{styles/java}
+%\usepackage{styles/rust}
+
+%% egyéb csomagok betöltése itt, vagy a dolgozat.sty fájlban
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+% diagramok
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.multipart,fit,calc}
+% jobb sorkizárás; a nem elválasztható (írógépbetűs) szavak ne lógjanak ki a margóra
+\usepackage{microtype}
+\setlength{\emergencystretch}{2em}
+% URL-ek törése az irodalomjegyzékben bármely karakternél
+\setcounter{biburlnumpenalty}{100}
+\setcounter{biburllcpenalty}{100}
+\setcounter{biburlucpenalty}{100}
+
+% Kitöltendő helyek jelölése: pirosan látszik a PDF-ben, hogy ne maradjon benne
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{[#1]}}}
+
+\usepackage{hyperref}
+% cleveref csomag és beállításai -- az egyetlen, amit a hyperref után kell betölteni!
+\usepackage{styles/refs}
+
+\input{adatok}
+
+\begin{document}
+
+\pagestyle{empty}
+\pagenumbering{gobble}
+
+\include{cover/cimlap}
+\include{cover/feladatkiiras}
+
+\tableofcontents
+
+\clearpage
+\pagenumbering{arabic}
+\pagestyle{fancy}
+
+\include{chapters/1_introduction}
+\include{chapters/2_concept}
+\include{chapters/3_design}
+\include{chapters/4_implementation}
+\include{chapters/5_test}
+\include{chapters/6_summary}
+
+%biblatex verzió
+%a bibintoc heading stílussal megjelenik a tartalomjegyzékben, title-lel a megjelenő címsor szövege módosítható
+\printbibliography[heading=bibintoc,%
+title=Források]
+%sima bibtex verzió
+%\bibliographystyle{plain}
+%\bibliography{dolgozat.bib}
+
+\include{cover/hasznalati}
+
+\end{document}

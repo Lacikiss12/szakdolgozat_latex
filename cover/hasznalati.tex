@@ -1,0 +1,41 @@
+%!TEX root = ../dolgozat.tex
+\pagestyle{empty}
+
+\section*{Adathordozó használati útmutató}
+
+A szakdolgozathoz mellékelt adathordozó a következő könyvtárakat és fájlokat tartalmazza:
+\begin{itemize}
+\item \texttt{dolgozat.pdf} -- a szakdolgozat PDF formátumban,
+\item \texttt{dolgozat/} -- a szakdolgozat \LaTeX{} forráskódja,
+\item \texttt{online-exam-system/backend/} -- a FastAPI alapú szerveroldali alkalmazás,
+\item \texttt{online-exam-system/frontend/} -- a Next.js alapú kliensoldali alkalmazás,
+\item \texttt{online-exam-system/docker-compose.yml} -- a PostgreSQL adatbázis indítását leíró fájl,
+\item \texttt{online-exam-system/README.md} -- részletes telepítési és használati leírás,
+\item \texttt{tesztek/} -- a \mref{ch:teszteles}ben ismertetett tesztszkriptek.
+\end{itemize}
+
+\subsection*{Futtatás}
+
+A futtatáshoz Docker Desktop, Python 3.10 vagy újabb, valamint Node.js 18 vagy újabb verzió
+szükséges. Az alkalmazás három lépésben indítható el, az \texttt{online-exam-system} könyvtárból:
+\begin{enumerate}
+\item Az adatbázis és a sandbox image előkészítése:\
+  \texttt{docker compose up -d}\
+  \texttt{docker pull python:3.11-slim}
+\item A szerver indítása a \texttt{backend} könyvtárban:\
+  \texttt{python -m venv venv}, majd a környezet aktiválása után\
+  \texttt{pip install -r requirements.txt}\
+  \texttt{uvicorn main:app --port 8000}
+\item A kliens indítása a \texttt{frontend} könyvtárban:\
+  \texttt{npm install}\
+  \texttt{npm run dev}
+\end{enumerate}
+Ezután az alkalmazás a \texttt{http://localhost:3000} címen érhető el, az API interaktív
+dokumentációja pedig a \texttt{http://localhost:8000/docs} címen. Oktatói fiók a regisztrációs
+űrlapon az ,,Oktatóként regisztrálok'' lehetőséggel és az alapértelmezett \texttt{oktato123}
+meghívókóddal hozható létre (ez a \texttt{TEACHER\_INVITE\_CODE} környezeti változóval
+módosítható).
+
+A tesztszkriptek a \texttt{backend} könyvtár virtuális környezetének Python értelmezőjével
+futtathatók; paraméterként a \texttt{backend} könyvtár elérési útját kell megadni. A sandbox
+tesztjéhez futó Docker szükséges.
