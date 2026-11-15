@@ -29,6 +29,11 @@ margin=25mm,bindingoffset=5mm]{geometry}
 %saját tételszerû környezetek
 \usepackage{amsthm}
 
+%betűtípus: Times New Roman (szöveg és matematika; a newtxmath-ot az amsthm után kell betölteni)
+\usepackage{newtxtext,newtxmath}
+%sortávolság: 12 pt betűméretnél 16 pt baselineskip (14,5 pt * 1,1034)
+\linespread{1.1034}
+
 \theoremstyle{plain}
 \newtheorem{theorem}{tétel}[chapter]
 \newtheorem{lemma}[theorem]{lemma}
